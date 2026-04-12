@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="GameDay Sync - Real-time Stadium Crowd Management System with AI Assistant">
+    <meta name="theme-color" content="#1a1a1a">
+    <title>GameDay Sync - MA Chidambaram Stadium</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Screen Reader Announcements -->
+    <div id="aria-live-region" aria-live="polite" aria-atomic="true" class="sr-only"></div>
+
+    <!-- Header Navigation -->
+    <header role="banner" class="main-header">
+        <div class="header-container">
+            <div class="header-left">
+                <h1 class="logo">⚡ MA Chidambaram</h1>
+                <p class="tagline">Chennai Super Kings Live Venue Intelligence</p>
+            </div>
+            <nav class="nav-tabs" role="navigation" aria-label="Main navigation">
+                <button class="nav-tab active" data-tab="home" onclick="switchTab('home')">
+                    🏠 Home
+                </button>
+                <button class="nav-tab" data-tab="map" onclick="switchTab('map')">
+                    🗺️ Map
+                </button>
+                <button class="nav-tab" data-tab="orders" onclick="switchTab('orders')">
+                    📦 Orders
+                </button>
+                <a href="/staff" class="nav-tab" style="text-decoration: none; color: inherit;">
+                    🔒 Staff Login
+                </a>
+            </nav>
+            <div class="header-status">
+                <span id="connection-status" aria-label="Connection status" class="status-indicator">
+                    🔄 Connecting...
+                </span>
+                <span id="cart-count" aria-label="Shopping cart items" class="cart-badge">0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main role="main" class="main-content">
+        <!-- ==================== HOME TAB ==================== -->
+        <div id="home-tab" class="tab-content active">
+            <!-- Analytics Dashboard -->
+            <section aria-labelledby="analytics-title" class="analytics-section">
+                <h2 id="analytics-title">📊 Stadium Overview</h2>
+                
+                <div class="stats-grid">
+                    <!-- Average Wait Time -->
+                    <div class="stat-card">
+                        <div class="stat-icon">⏱️</div>
+                        <div class="stat-content">
+                            <h3>Average Wait Time</h3>
+                            <p class="stat-value" id="avg-wait-time">--</p>
+                            <p class="stat-label">Across all sectors</p>
+                        </div>
+                    </div>
+
+                    <!-- Stadium Capacity -->
+                    <div class="stat-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-content">
+                            <h3>Stadium Occupancy</h3>
+                            <p class="stat-value" id="occupancy-percent">--</p>
+                            <p class="stat-label">Current capacity</p>
+                        </div>
+                    </div>
+
+                    <!-- Busiest Sector -->
+                    <div class="stat-card">
+                        <div class="stat-icon">🔴</div>
+                        <div class="stat-content">
+                            <h3>Busiest Location</h3>
+                            <p class="stat-value" id="busiest-sector">--</p>
+                            <p class="stat-label">Longest wait time</p>
+                        </div>
+                    </div>
+
+                    <!-- Game Status -->
+                    <div class="stat-card">
+                        <div class="stat-icon">🏏</div>
+                        <div class="stat-content">
+                            <h3>Match Status</h3>
+                            <p class="stat-value" id="game-quarter">Innings 1</p>
+                            <p class="stat-label" id="game-time">0.0 Overs</p>
+                        </div>
+                    </div>
+
+                    <!-- Air Quality -->
+                    <div class="stat-card">
+                        <div class="stat-icon">🌤️</div>
+                        <div class="stat-content">
+                            <h3>Environment</h3>
+                            <p class="stat-value" id="aqi-value" style="font-size: 1.25rem;">Fetching AQI...</p>
+                            <p class="stat-label" id="aqi-label">Google Air Quality</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Real-time Queue Status -->
+            <section aria-labelledby="queue-status-title" class="queue-status-section">
+                <h2 id="queue-status-title">📋 Queue Status</h2>
+                <div id="queue-summary" class="queue-summary">
+                    <p>Loading queue information...</p>
+                </div>
+            </section>
+
+            <!-- Recommendations -->
+            <section aria-labelledby="recommendations-title" class="recommendations-section">
+                <h2 id="recommendations-title">💡 Smart Recommendations</h2>
+                <div id="recommendations" class="recommendations-grid">
+                    <div class="recommendation-card">
+                        <h3>Shortest Wait</h3>
+                        <p id="rec-shortest">Analyzing...</p>
+                    </div>
+                    <div class="recommendation-card">
+                        <h3>Best for Food</h3>
+                        <p id="rec-best-food">Analyzing...</p>
+                    </div>
+                    <div class="recommendation-card">
+                        <h3>Quick Restroom</h3>
+                        <p id="rec-quick-restroom">Analyzing...</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- ==================== MAP TAB ==================== -->
+        <div id="map-tab" class="tab-content">
+            <section aria-labelledby="map-title" class="map-section">
+                <h2 id="map-title">Stadium Venue Map</h2>
+                <p id="map-description">
+                    Interactive map showing restroom and food court locations with real-time wait times.
+                    Click any sector to view details.
+                </p>
+
+                <!-- Dynamic Google Maps Viewport -->
+                <div 
+                    id="google-map-container" 
+                    style="width: 100%; height: 500px; border-radius: 12px; margin-top: 1rem; border: 2px solid var(--border);"
+                    aria-label="Interactive Google Map of MA Chidambaram Stadium"
+                >
+                    <div style="display: flex; justify-content: center; align-items: center; height: 100%; color: var(--text-secondary);">
+                        📡 Initializing Satellite Uplink...
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sector Details Panel -->
+            <section id="sector-details" aria-labelledby="details-title" class="panel details-panel" style="display: none;">
+                <h2 id="details-title">Sector Details</h2>
+                <div id="details-content">
+                    <p>Select a sector to view details.</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- ==================== ORDERS TAB ==================== -->
+        <div id="orders-tab" class="tab-content">
+            <section aria-labelledby="checkout-title" class="checkout-section">
+                <h2 id="checkout-title">🛒 Express Order</h2>
+
+                <div class="checkout-container">
+                    <div class="form-group">
+                        <label for="seat-number">Seat Number (Optional)</label>
+                        <input
+                            type="text"
+                            id="seat-number"
+                            placeholder="e.g., A1, B123"
+                            aria-describedby="seat-help"
+                            pattern="[A-Z]\d{1,3}"
+                        />
+                        <small id="seat-help">Format: A1, B123, etc.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email (Optional)</label>
+                        <input
+                            type="email"
+                            id="email"
+                            placeholder="your@email.com"
+                            aria-describedby="email-help"
+                        />
+                        <small id="email-help">For order confirmation</small>
+                    </div>
+
+                    <div class="cart-summary">
+                        <p>Items in cart: <strong id="cart-items-count">0</strong></p>
+                        <p>Estimated delivery: <strong id="delivery-time">5 minutes</strong></p>
+                    </div>
+
+                    <button
+                        id="checkout-button"
+                        class="btn btn-primary btn-lg"
+                        aria-label="Complete checkout and place order"
+                    >
+                        Complete Order
+                    </button>
+                </div>
+
+                <!-- Order Confirmation -->
+                <div id="order-confirmation" class="confirmation-panel" style="display: none;">
+                    <p>Order information will appear here.</p>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- ==================== AI CHATBOT WIDGET ==================== -->
+    <div id="chatbot-widget" class="chatbot-widget">
+        <!-- Chatbot Toggle Button -->
+        <button
+            id="chatbot-toggle"
+            class="chatbot-toggle"
+            aria-label="Open AI Assistant"
+            onclick="toggleChatbot()"
+            title="AI Assistant - Ask for directions, wait times, and more!"
+        >
+            <span class="chatbot-icon">💬</span>
+            <span class="chatbot-label">Ask AI</span>
+        </button>
+
+        <!-- Chatbot Panel -->
+        <div id="chatbot-panel" class="chatbot-panel" style="display: none;">
+            <!-- Header -->
+            <div class="chatbot-header">
+                <h3>🤖 Stadium Assistant</h3>
+                <p class="ai-badge">Powered by Google AI</p>
+                <button
+                    class="chatbot-close"
+                    onclick="toggleChatbot()"
+                    aria-label="Close chatbot"
+                >
+                    ✕
+                </button>
+            </div>
+
+            <!-- Messages Container -->
+            <div id="chatbot-messages" class="chatbot-messages">
+                <div class="message bot-message">
+                    <p>👋 Hello! I'm your Stadium Assistant. I can help you with:</p>
+                    <ul class="help-list">
+                        <li>🗺️ Directions to restrooms & food courts</li>
+                        <li>⏱️ Current wait times</li>
+                        <li>📍 Finding the shortest queue</li>
+                        <li>🎮 Game status & schedule</li>
+                        <li>🍔 Menu & ordering info</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="chatbot-quick-actions">
+                <button class="quick-action" onclick="askChatbot('What are the wait times?')">
+                    ⏱️ Wait Times
+                </button>
+                <button class="quick-action" onclick="askChatbot('How do I find a restroom?')">
+                    🚻 Restrooms
+                </button>
+                <button class="quick-action" onclick="askChatbot('Where is food?')">
+                    🍔 Food Courts
+                </button>
+                <button class="quick-action" onclick="askChatbot('What\'s the game status?')">
+                    🎮 Game Status
+                </button>
+            </div>
+
+            <!-- Input Area -->
+            <div class="chatbot-input-area">
+                <input
+                    type="text"
+                    id="chatbot-input"
+                    class="chatbot-input"
+                    placeholder="Ask about wait times, directions..."
+                    aria-label="Ask the AI Assistant"
+                    onkeypress="handleChatbotKeypress(event)"
+                />
+                <button
+                    class="chatbot-send"
+                    onclick="sendChatbotMessage()"
+                    aria-label="Send message"
+                >
+                    ➤
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer role="contentinfo" class="main-footer">
+        <div class="footer-content">
+            <p>&copy; 2024 GameDay Sync - Real-time Stadium Intelligence</p>
+            <p>Built with Node.js, Express, Socket.IO, and AI-Powered Assistance</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="app.js"></script>
+    <script src="chatbot.js"></script>
+
+    <!-- Styles -->
+    <style>
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        [role="button"]:focus,
+        button:focus,
+        input:focus {
+            outline: 3px solid #3b82f6;
+            outline-offset: 2px;
+        }
+
+        .sector-busy rect[data-role="background"] {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+    </style>
+</body>
+</html>

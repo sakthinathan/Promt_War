@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VenueFlow - Staff Admin Console</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0f172a;
+            --surface: #1e293b;
+            --primary: #FDB913; /* CSK Yellow */
+            --danger: #ef4444;
+            --success: #10b981;
+            --text-light: #f8fafc;
+        }
+
+        body {
+            margin: 0;
+            padding: 2rem;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: 'Inter', sans-serif;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--surface);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        h1 { margin: 0; font-size: 1.5rem; color: var(--primary); }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .panel {
+            background-color: var(--surface);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5);
+        }
+
+        .panel h2 { margin-top: 0; font-size: 1.2rem; }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover { opacity: 0.8; }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-success { background-color: var(--success); color: white; }
+
+        #alert-log {
+            height: 300px;
+            overflow-y: auto;
+            background: #000;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.9rem;
+        }
+
+        .log-entry { margin-bottom: 0.5rem; border-bottom: 1px solid #333; padding-bottom: 0.25rem; }
+        .log-critical { color: var(--danger); font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>🔒 VenueFlow Command Center (Chepauk)</h1>
+        <div><span id="socket-status">🔴 Disconnected</span></div>
+    </div>
+
+    <div class="dashboard-grid">
+        <!-- Controls Panel -->
+        <div class="panel">
+            <h2>Simulation Controls</h2>
+            <p style="color: #94a3b8;">Trigger synthetic load algorithms to stress-test your architecture and vertex AI models.</p>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+                <button class="btn btn-danger" onclick="triggerSimulation()">🔥 Start Incident Saturation</button>
+                <button class="btn btn-success" onclick="stopSimulation()">🟢 Normalize Variables</button>
+            </div>
+            
+            <p id="sim-status" style="margin-top: 1rem; font-weight: bold; color: var(--primary);"></p>
+        </div>
+
+        <!-- Alert Triage Log -->
+        <div class="panel">
+            <h2>Live Anomaly Triage</h2>
+            <div id="alert-log">
+                <div style="color: #64748b;">Listening for critical queue limit breaches...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Integrate Socket.IO -->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        // Bind exclusively to the admin channel to receive protected triage variables
+        socket.on('connect', () => {
+            document.getElementById('socket-status').textContent = '🟢 Connected (Admin)';
+            socket.emit('joinAdmin');
+        });
+
+        // Listen for standard updates mapping to the grid
+        socket.on('adminGridUpdate', (state) => {
+            const time = new Date().toLocaleTimeString();
+            const logBox = document.getElementById('alert-log');
+
+            // Audit mathematical limits natively
+            let criticalFound = false;
+
+            ['restroom', 'food'].forEach(type => {
+                Object.values(state[type]).forEach(node => {
+                    if(node.waitTime > 20) {
+                        criticalFound = true;
+                        logBox.innerHTML += `<div class="log-entry log-critical">[${time}] CRITICAL: ${node.name} queue exceeded threshold! (${node.waitTime} min)</div>`;
+                    }
+                });
+            });
+
+            if(criticalFound) {
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+        });
+
+        async function triggerSimulation() {
+            try {
+                const res = await fetch('/api/admin/start-simulation', { method: 'POST' });
+                const json = await res.json();
+                document.getElementById('sim-status').textContent = `Status: ${json.status}`;
+            } catch(e) {
+                alert("Target API offline");
+            }
+        }
+
+        async function stopSimulation() {
+            try {
+                const res = await fetch('/api/admin/stop-simulation', { method: 'POST' });
+                const json = await res.json();
+                document.getElementById('sim-status').textContent = `Status: ${json.status}`;
+            } catch(e) {
+                alert("Target API offline");
+            }
+        }
+
+        // Environment Telemetry Polling
+        async function fetchAdminAQI() {
+            try {
+                const res = await fetch('/api/air-quality');
+                const data = await res.json();
+                if (data.indexes && data.indexes.length > 0) {
+                    const aqiCategory = data.indexes[0].category;
+                    const time = new Date().toLocaleTimeString();
+                    const logBox = document.getElementById('alert-log');
+
+                    if(aqiCategory.includes('Poor') || aqiCategory.includes('Unhealthy') || aqiCategory.includes('Severe')) {
+                        logBox.innerHTML += `<div class="log-entry log-critical">[${time}] ENVIRONMENTAL ALARM: Air Quality degraded to ${aqiCategory}! Deploy masks to ground staff immediately.</div>`;
+                        logBox.scrollTop = logBox.scrollHeight;
+                    }
+                }
+            } catch(e) {}
+        }
+        
+        fetchAdminAQI();
+        setInterval(fetchAdminAQI, 300000); // 5 minutes refresh
+    </script>
+</body>
+</html>
